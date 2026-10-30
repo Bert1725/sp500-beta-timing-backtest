@@ -1,6 +1,6 @@
 # S&P 500 Beta Timing Backtest
 
-Can you beat just buying and holding the S&P 500 by taking on more market exposure (beta) when it's going up and less when it isn't, after fees and taxes, checking once a month? This repo is my attempt to answer that honestly. It goes through three versions, from a simple trend filter on SPY up to a 3x leveraged version using UPRO, and tests each one in a regular taxable account with a train/test split, a walk-forward test, and a few robustness checks.
+Can you beat just buying and holding the S&P 500 by taking on more market exposure (beta) when it's going up and less when it isn't, after fees and taxes, checking once a month? This repo is my attempt to answer that. It goes through three versions, from a simple trend filter on SPY up to a 3x leveraged version using UPRO, and tests each one in a regular taxable account with a train/test split, a walk-forward test, and a few robustness checks.
 
 **Short answer:** not reliably. The best version beat buy and hold SPY and the 2x fund SSO from 2000 and 2005, but almost all of that came from sitting out long bear markets, and it's trailed leveraged buy and hold since 2010.
 
