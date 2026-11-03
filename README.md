@@ -286,10 +286,17 @@ Zenner, M., Hill, S., Clark, J. and Mago, N. (2008). The Most Important Number i
 
 My first pass made the strategies look a lot better than they were, so I went back through everything. It traded at the same close that created the signal, and moving to next-day trades cut v3's 2005-now result from 16.9% to about 14.7% a year. The walk-forward started in 2005, which happened to skip the year it would have picked plain 3x right before the dot com crash, and starting in 2000 shows the -82% drawdown. I also wasn't applying the wash sale rule, I was crediting the $3,000 loss deduction to the account, and I was taxing leveraged ETF payouts as qualified dividends. In addition, my first Monte Carlo just reshuffled the strategy's own returns, so it couldn't show the trend filter failing. Lastly, in v2 I was treating the Pettengill-style conditional beta test as evidence, even though it uses the market's future return. Everything in this README is from the corrected version.
 
-## Appendix B: Repository structure and reproduction
+## Appendix B: Reproducing the results
+
+### B.1 Computational requirements
+
+Everything here was run on my Mac using Python 3.9.6. I pinned the package versions in `requirements.txt` (pandas 2.3.3, numpy 2.0.2, matplotlib 3.9.4, yfinance 1.2.0 and jupyter 1.1.1), but the last cell of each notebook also prints what it was really run with, just in case. The data itself isn't in the repo, so `get_data.py` pulls it from Yahoo Finance and FRED. Even though it's the same source, Yahoo goes back and changes old prices once in a while. So each notebook ends with the last date and a SHA-256 hash of every file it used, which tells you right away if your download differs from mine.
+
+### B.2 Repository structure
 
 ```
 get_data.py                 downloads everything into data/ (yfinance + FRED)
+requirements.txt            pinned package versions
 compare_versions.ipynb      all three versions side by side
 images/                     charts used in this README
 v1_trend_vol/               SPY + T-bills, trend filter + volatility targeting
@@ -299,7 +306,7 @@ v3_leveraged_beta/          SPY / SSO / UPRO, trend filters + fixed or Kelly lev
 
 Each version folder has a `backtest.ipynb` with the full analysis, a `strategy.py` with the rules and the account / tax simulator, and a `monthly_signal.py` that prints what to hold next month.
 
-To reproduce the results:
+### B.3 Instructions
 
 ```
 python3 -m venv .venv
@@ -308,10 +315,26 @@ pip install -r requirements.txt
 python get_data.py
 ```
 
-Then open any of the notebooks and run all cells. The results will move a little depending on the date you download the data. To get next month's position for v3, run this after the close on the last trading day of the month and place the trade the next day:
+Once that finishes, I just open a notebook and hit Run All. None of them rely on another one, so you can start anywhere. Also, if you pull the data on a different day than I did, the numbers will probably be a bit off from mine. To get next month's position for v3, run this after the close on the last trading day of the month and place the trade the next day:
 
 ```
 python v3_leveraged_beta/monthly_signal.py
 ```
+
+### B.4 Where each table and figure comes from
+
+| In this README | Notebook | Section of the notebook |
+|---|---|---|
+| Table 1 | none | ETF and index facts, no code |
+| Table 2 | `v1_trend_vol`, `v2_conditional_beta`, `v3_leveraged_beta` | Section 2 (v1), Section 4 (v2), Section 2 (v3) |
+| Table 3 | `compare_versions` | Fixed split, v3 from 2000 |
+| Figure 1 | `v3_leveraged_beta` | Section 4 (saved as `images/walk_forward_2000.png`) |
+| Figure 2 | `v3_leveraged_beta` | Section 3 (saved as `images/drawdowns_2010.png`) |
+| Table 4 | `v3_leveraged_beta` | Section 4 |
+| Section 5.1 (v1 risk numbers) | `v1_trend_vol` | Section 3 |
+| Section 5.4 | `v2_conditional_beta` | Section 3 |
+| Table 5 | `v3_leveraged_beta` | Section 5 |
+| Sections 6.1-6.5 | `v3_leveraged_beta` | Section 6 |
+| Table 6 | `v3_leveraged_beta` | Section 6, Outside the US |
 
 *This is a personal research project, not financial advice.*
