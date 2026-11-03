@@ -5,12 +5,26 @@
 import os
 import sys
 import pandas as pd
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from pandas.tseries.offsets import BDay
 
 # get_data.py is one folder up
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from strategy import (load_data, get_target_leverage, leverage_to_weights, get_settings_grid,
                       walk_forward, tickers, data_folder)
+
+
+def month_is_over(last_date):
+    # the latest close is the real month end if the calendar has already moved on, or if the next
+    # weekday falls in a new month. a holiday on the last weekday (Good Friday on the 29th, say)
+    # slips through, but then it just shows up as the official signal the next morning
+    today = datetime.now(ZoneInfo("America/New_York")).date()
+    if (last_date + BDay(1)).month != last_date.month:
+        return True
+    # only trust the calendar if the data is current (--no-download can leave it a few days behind)
+    return today.month != last_date.month and (today - last_date.date()).days <= 4
 
 
 # --no-download uses whatever is already in data/
@@ -32,8 +46,9 @@ settings["size"] = float(settings["size"])
 leverage = get_target_leverage(data, **settings).dropna()
 weights = leverage_to_weights(leverage)
 
-# last row is just the latest day, not a real month end unless the month is over
-if settings["check"] == "monthly":
+# unless the month is over, the last row is just the latest day and not a real month end
+month_over = month_is_over(last_date)
+if settings["check"] == "monthly" and not month_over:
     completed = weights[weights.index.to_period("M") < current_month]
 else:
     completed = weights
@@ -58,8 +73,9 @@ print("SPY vs its 200-day average at the latest close:", str(round((spy_growth.i
 print()
 print("Signal from the last completed check (" + str(completed.index[-1].date()) + "), leverage " + str(round(leverage.loc[completed.index[-1]], 2)) + "x:")
 show(completed.iloc[-1])
-print()
-print("Preview if the month ended on the latest close (" + str(last_date.date()) + "), leverage " + str(round(leverage.iloc[-1], 2)) + "x:")
-show(weights.iloc[-1])
+if not month_over:
+    print()
+    print("Preview if the month ended on the latest close (" + str(last_date.date()) + "), leverage " + str(round(leverage.iloc[-1], 2)) + "x:")
+    show(weights.iloc[-1])
 print()
 print("Trade on the next trading day, and only if a holding is off by at least 5% of the account.")

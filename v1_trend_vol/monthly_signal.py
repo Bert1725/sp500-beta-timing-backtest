@@ -5,6 +5,9 @@
 import os
 import sys
 import pandas as pd
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from pandas.tseries.offsets import BDay
 
 # get_data.py is one folder up
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -29,6 +32,17 @@ def explain(data, date, settings):
     print("  Target volatility:", str(round(settings["target_vol"] * 100, 1)) + "%")
 
 
+def month_is_over(last_date):
+    # the latest close is the real month end if the calendar has already moved on, or if the next
+    # weekday falls in a new month. a holiday on the last weekday (Good Friday on the 29th, say)
+    # slips through, but then it just shows up as the official signal the next morning
+    today = datetime.now(ZoneInfo("America/New_York")).date()
+    if (last_date + BDay(1)).month != last_date.month:
+        return True
+    # only trust the calendar if the data is current (--no-download can leave it a few days behind)
+    return today.month != last_date.month and (today - last_date.date()).days <= 4
+
+
 # --no-download uses whatever is already in data/
 if "--no-download" not in sys.argv:
     from get_data import download_data
@@ -42,8 +56,9 @@ target = get_target_exposure(data, **settings).dropna()
 last_date = data.index[-1]
 current_month = last_date.to_period("M")
 
-# last row is just the latest day, not a real month end unless the month is over
-completed = target[target.index.to_period("M") < current_month]
+# unless the month is over, the last row is just the latest day and not a real month end
+month_over = month_is_over(last_date)
+completed = target if month_over else target[target.index.to_period("M") < current_month]
 official_date = completed.index[-1]
 official_exposure = completed.iloc[-1]
 
@@ -54,11 +69,12 @@ print("Signal from the last completed month end (" + str(official_date.date()) +
 explain(data, official_date, settings)
 print("  SPY:", str(round(official_exposure * 100)) + "%", " T-bills:", str(round((1 - official_exposure) * 100)) + "%")
 
-print()
-print("Preview if the month ended on the latest close (" + str(last_date.date()) + "):")
-explain(data, last_date, settings)
-preview = target.iloc[-1]
-print("  SPY:", str(round(preview * 100)) + "%", " T-bills:", str(round((1 - preview) * 100)) + "%")
+if not month_over:
+    print()
+    print("Preview if the month ended on the latest close (" + str(last_date.date()) + "):")
+    explain(data, last_date, settings)
+    preview = target.iloc[-1]
+    print("  SPY:", str(round(preview * 100)) + "%", " T-bills:", str(round((1 - preview) * 100)) + "%")
 
 print()
 print("Trade on the next trading day, and only if the change is at least 5% of the account.")
