@@ -6,7 +6,7 @@ November 2026. Data through October 29, 2026.
 
 ## Abstract
 
-I test whether an investor who checks once a month in a regular taxable brokerage account can beat buying and holding the S&P 500 by changing how much market exposure (beta) they hold. I build three versions. The first uses a trend filter and volatility targeting on SPY, the second holds more or less beta through sector ETFs and the 2x fund SSO depending on the trend, and the third applies trend filters and leverage rules taken from published research to the 3x fund UPRO. Every result includes trading costs, next-day execution, and federal taxes with tax lots and the wash sale rule. The best rule (3x when SPY is above its 200-day moving average, T-bills otherwise) turned $10,000 into $121,387 after tax from 2000 in a walk-forward test, compared to $69,793 for SPY and $86,467 for SSO. However, it fell 82% along the way, its lead over SPY is not statistically significant (t = 1.66), and since the real UPRO started trading in 2009 it has trailed leveraged buy and hold. This means the edge mostly comes from sitting out 2000-2002 and 2008, rather than from a reliable way to time beta.
+I test whether an investor who checks once a month in a regular taxable brokerage account can beat buying and holding the S&P 500 by changing how much market exposure (beta) they hold. I build three versions. The first uses a trend filter and volatility targeting on SPY, the second holds more or less beta through sector ETFs and the 2x fund SSO depending on the trend, and the third applies trend filters and leverage rules taken from published research to the 3x fund UPRO. Every result includes trading costs, next-day execution, and federal taxes with tax lots and the wash sale rule. Out of everything I tested, the best rule was to hold 3x whenever SPY is above its 200-day moving average and T-bills when it isn't. Starting in 2000 with $10,000, the walk-forward version ended with $121,387 after tax, while SPY ended with $69,793 and SSO with $86,467. Even though that's the highest ending number, it actually dropped 82% at one point. In addition, the lead over SPY isn't statistically significant (t = 1.66), and the strategy has trailed leveraged buy and hold ever since the real UPRO started trading in 2009. This means the edge mostly comes from sitting out 2000-2002 and 2008, rather than from a reliable way to time beta.
 
 Keywords: market timing, leveraged ETFs, trend following, conditional beta, volatility targeting, after-tax backtesting
 
@@ -14,7 +14,7 @@ JEL classification: G11, G14, G17
 
 ## 1. Introduction
 
-Buying and holding the S&P 500 is hard to beat, but it also means sitting through every crash at full exposure. The idea behind this project is that you might do better by holding more beta when the market is trending up and less (or none) when it isn't. On top of that, leveraged ETFs like SSO and UPRO make it easy for a regular investor to hold 2x or 3x the market, so the question isn't only whether to be in or out, but how much.
+Buying and holding the S&P 500 is hard to beat, but it also means sitting through every crash at full exposure. My idea was that you could actually do better by holding more beta while the market trends up, and cutting back (or getting out) when it doesn't. Leveraged ETFs like SSO and UPRO make this a lot more interesting, since anyone with a brokerage account can hold 2x or 3x the market. So the real question isn't just whether to be in or out, it's also how much to hold.
 
 Most backtests of this idea leave out things a real investor actually has to deal with. For example, they often trade at the same close that created the signal, ignore taxes, or pick settings using the same years they are scored on. I wanted to see what's left after accounting for all of that, specifically for someone like me who would run this once a month in a taxable account.
 
@@ -26,7 +26,7 @@ The short answer is that it didn't work reliably. v3 beat buy and hold SPY and S
 
 *Figure 1: Growth of $10,000 from 2000 for the v3 walk-forward strategy and buy and hold SPY, SSO and UPRO, after the federal taxes paid each year (log scale). The strategy re-picks its setting every January using only earlier years.*
 
-The rest of this README is laid out like a paper. Section 2 covers the ETFs and the research the rules come from, Section 3 describes the data, and Section 4 explains the rules, costs, taxes and testing design. Section 5 shows the main results, Section 6 runs the robustness checks, and Section 7 concludes and lists the limitations.
+I start with background on the ETFs and the papers the rules come from (Section 2), then go through the data (Section 3) and how the rules, costs, taxes and tests work (Section 4). After that I show the main results (Section 5), run the robustness checks (Section 6), and finish with what I think it all means and where it falls short (Section 7).
 
 ## 2. Background and related literature
 
@@ -166,7 +166,7 @@ Since a single start date can make any strategy look good or bad, Table 4 runs t
 
 Notes: Same signals in every row, only the start date changes. Each row's taxes start from a new $10,000 account.
 
-The edge shrinks or flips with later start years. From 2010, 2015 and 2020 it trailed SSO, and from 2015 it even trailed SPY. The -82% from 2000 happened because scoring 1994-1999 picked plain 3x buy and hold for 2000 and 2001, right into the dot com crash, and it only switched to the trend filter in 2002.
+The edge shrinks or flips with later start years. Starting in 2010, 2015 or 2020, it actually trailed SSO every time, and the 2015 start even trailed plain SPY. The -82% from 2000 happened because scoring 1994-1999 picked plain 3x buy and hold for 2000 and 2001, right into the dot com crash, and it only switched to the trend filter in 2002.
 
 ### 5.3 Where the edge comes from
 
