@@ -96,7 +96,7 @@ v2 uses the same kind of trend signal (8, 10 or 12 months). In an uptrend it tak
 
 v3 holds SPY, SSO, UPRO and T-bills, so leverage can be anywhere from 0 to 3x. The trend filter is either the 200-day average, the 10-month average, or none. Leverage is either a fixed 2x or 3x, or a Kelly-style rule,
 
-$$L_t = \min\left(3, \; k \cdot \frac{\mu}{\hat{\sigma}_t^2}\right) \qquad (3)$$
+$$L_t = \min\left(3, k \cdot \frac{\mu}{\hat{\sigma}_t^2}\right) \qquad (3)$$
 
 with $k$ = 0.5 or 1, a risk premium $\mu$ of 6% (the middle of Zenner et al.'s range), and volatility from either the last 21 days or the VIX. Table 2 lists every setting that was tested.
 
