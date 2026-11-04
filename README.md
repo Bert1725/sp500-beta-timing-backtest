@@ -6,7 +6,7 @@ November 2026. Data through October 29, 2026.
 
 ## Abstract
 
-I test whether an investor who checks once a month in a regular taxable brokerage account can beat buying and holding the S&P 500 by changing how much market exposure (beta) they hold. I build three versions. The first uses a trend filter and volatility targeting on SPY, the second holds more or less beta through sector ETFs and the 2x fund SSO depending on the trend, and the third applies trend filters and leverage rules taken from published research to the 3x fund UPRO. Every result includes trading costs, next-day execution, and federal taxes with tax lots and the wash sale rule. Out of everything I tested, the best rule was to hold 3x whenever SPY is above its 200-day moving average and T-bills when it isn't. Starting in 2000 with $10,000, the walk-forward version ended with $121,387 after tax, while SPY ended with $69,793 and SSO with $86,467. Even though that's the highest ending number, it actually dropped 82% at one point. In addition, the lead over SPY isn't statistically significant (t = 1.66), and the strategy has trailed leveraged buy and hold ever since the real UPRO started trading in 2009. This means the edge mostly comes from sitting out 2000-2002 and 2008, rather than from a reliable way to time beta.
+This project tests whether an investor who checks once a month in a regular taxable account can beat buying and holding the S&P 500 by changing how much market exposure (beta) they hold. I test three versions: a trend filter with volatility targeting on SPY, a rule that moves between SPY, sector ETFs, the 2x fund SSO and T-bills depending on the trend, and trend filters and leverage rules from published research applied to the 3x fund UPRO. All results include trading costs, next-day execution, and federal taxes with tax lots and the wash sale rule. The best rule held 3x while SPY was above its 200-day moving average and T-bills otherwise. In a walk-forward test starting in 2000, it turned $10,000 into $121,387 after tax, compared to $69,793 for SPY and $86,467 for SSO, although it fell 82% along the way. Its lead over SPY is not statistically significant (t = 1.66), and it has trailed leveraged buy and hold since the real UPRO started trading in 2009. The results suggest that most of the gain comes from sitting out the 2000-2002 and 2008 bear markets.
 
 Keywords: market timing, leveraged ETFs, trend following, conditional beta, volatility targeting, after-tax backtesting
 
@@ -14,19 +14,19 @@ JEL classification: G11, G14, G17
 
 ## 1. Introduction
 
-Buying and holding the S&P 500 is hard to beat, but it also means sitting through every crash at full exposure. My idea was that you could actually do better by holding more beta while the market trends up, and cutting back (or getting out) when it doesn't. Leveraged ETFs like SSO and UPRO make this a lot more interesting, since anyone with a brokerage account can hold 2x or 3x the market. So the real question isn't just whether to be in or out, it's also how much to hold.
+Buying and holding the S&P 500 is hard to beat, but it also means sitting through every crash fully invested. The idea I wanted to test is whether holding more beta while the market trends up, and less or none when it doesn't, leaves an investor with more money at the end. Leveraged ETFs make the question more practical, since SSO and UPRO let anyone with a brokerage account hold 2x or 3x the market. That adds a second question on top of when to be invested, which is how much leverage to use.
 
-Most backtests of this idea leave out things a real investor actually has to deal with. For example, they often trade at the same close that created the signal, ignore taxes, or pick settings using the same years they are scored on. I wanted to see what's left after accounting for all of that, specifically for someone like me who would run this once a month in a taxable account.
+Many backtests of this idea leave out things a real investor has to deal with. For example, they often trade at the same close that produced the signal or ignore taxes. Many also pick their settings using the same years they report results for. I tried to account for these, specifically for someone like me who would check once a month and hold everything in a taxable account.
 
-I built the project in three versions, and each one takes on beta in a different way. v1 only holds SPY and T-bills, and it uses a trend filter plus volatility targeting to decide how much SPY to hold. v2 adds SSO and the nine sector ETFs, since several papers found that high beta stocks beat low beta stocks in up markets. v3 drops the sectors and adds UPRO instead, and every trend filter and leverage rule in it comes from a published paper. All three get a fixed train/test split, and v2 and v3 also get a walk-forward test, where the settings are re-picked every January using only the years before it.
+The project has three versions. v1 holds only SPY and T-bills and uses a trend filter with volatility targeting to set the SPY weight. v2 adds SSO and the nine sector ETFs, based on research showing that high beta stocks beat low beta stocks in up markets. v3 drops the sectors and adds UPRO, and every rule in it comes from a published paper. Each version is tested on a fixed train/test split, and v2 and v3 also get a walk-forward test that re-picks the settings every January using only earlier years.
 
-The short answer is that it didn't work reliably. v3 beat buy and hold SPY and SSO from 2000 and from 2005, but almost all of that came from sitting out long bear markets, and it mostly happened in years where UPRO didn't exist yet and had to be rebuilt from SPY. Since 2010, it has trailed buy and hold SSO and UPRO.
+The short answer is no, at least not reliably. v3 beat buy and hold SPY and SSO from 2000 and from 2005, but most of that came from being out of the market during long bear markets, and mostly in years before UPRO existed, when it had to be rebuilt from SPY. Since 2010, v3 has trailed buy and hold SSO and UPRO.
 
 ![v3 walk-forward vs buy and hold](images/walk_forward_2000.png)
 
 *Figure 1: Growth of $10,000 from 2000 for the v3 walk-forward strategy and buy and hold SPY, SSO and UPRO, after the federal taxes paid each year (log scale). The strategy re-picks its setting every January using only earlier years.*
 
-I start with background on the ETFs and the papers the rules come from (Section 2), then go through the data (Section 3) and how the rules, costs, taxes and tests work (Section 4). After that I show the main results (Section 5), run the robustness checks (Section 6), and finish with what I think it all means and where it falls short (Section 7).
+The rest of this README starts with background on the ETFs and the papers the rules come from (Section 2), then goes through the data (Section 3) and how the rules, costs, taxes and tests work (Section 4). Section 5 has the main results, Section 6 has the robustness checks, and Section 7 has the conclusion and limitations.
 
 ## 2. Background and related literature
 
@@ -52,41 +52,41 @@ When I say beta, I mean how much something moves with the market. SPY has a beta
 
 ### 2.2 Why leveraged ETFs don't just return 2x or 3x
 
-One thing I had to understand before using SSO and UPRO is that they don't just return 2x or 3x over time. They reset their leverage every day, so what you get is 2x or 3x of each day's return, not of the month's or the year's. When the market trends steadily, that daily reset actually helps a little, but when it chops back and forth it costs you. For example, say the S&P 500 is up 10% one day and down 10% the next. That leaves it down 1%, since 1.10 x 0.90 = 0.99. A 3x fund would be up 30% and then down 30%, and 1.30 x 0.70 = 0.91, so it ends down 9% instead of the 3% you'd expect. People call this volatility decay, and Cheng and Madhavan (2009) work through it in detail. It also shows up in real data. Specifically, Bianchi and Goldberg (2026) point out that the S&P 500 was basically flat over 2022-2023 while UPRO lost 28%. This is the main reason v3 uses a trend filter, since the idea is to only hold leverage when there's an actual trend.
+SSO and UPRO reset their leverage every day, so they deliver 2x or 3x of each day's return rather than of the return over a month or a year. In a steady trend that daily reset helps a little, but in a market that goes back and forth it costs money. For example, say the S&P 500 is up 10% one day and down 10% the next. That leaves it down 1%, since 1.10 x 0.90 = 0.99. A 3x fund would be up 30% and then down 30%, and 1.30 x 0.70 = 0.91, so it ends down 9% instead of the 3% you might expect. This is usually called volatility decay, and Cheng and Madhavan (2009) work through it in detail. It shows up in recent data too. Bianchi and Goldberg (2026) point out that the S&P 500 was roughly flat over 2022-2023 while UPRO lost 28%. This is the main reason v3 uses a trend filter, since the goal is to hold leverage only while there is a trend.
 
 ### 2.3 Beta and conditional beta
 
-v2 mostly comes from Lakonishok and Shapiro (1984). Across NYSE stocks from 1962-1980, beta by itself didn't explain returns, but high beta stocks did better than low beta stocks in up markets and worse in down markets. Pettengill, Sundaram and Mathur (1995) built a test around that, and both Xiao (2016) for the US and Elsas, El-Shaer and Theissen (2003) for Germany found the same thing with it. In other words, beta only seems to pay if you know which way the market is going. The catch is that their test splits months by the market's return in that same month, which you can't trade on. So the real question for v2 is whether a trend signal you do know ahead of time can stand in for it.
+v2 is based mostly on Lakonishok and Shapiro (1984). Across NYSE stocks from 1962-1980, they found that beta alone did not explain returns, but high beta stocks did better than low beta stocks in up markets and worse in down markets. Pettengill, Sundaram and Mathur (1995) built a formal test around this, and Xiao (2016) for the US and Elsas, El-Shaer and Theissen (2003) for Germany found the same pattern with it. This suggests that beta pays off mainly when you know which way the market is going. The problem is that their test splits months by the market's return in that same month, which nobody knows ahead of time. The question for v2 is whether a trend signal that is known ahead of time can stand in for it.
 
-A few other papers shaped the setup. Zenner et al. (2008) put the market risk premium at about 5-7% a year, so sitting in cash has a real cost. Genc, Moench and Pazarbasi (2025) found fund managers pile into high beta stocks when rates rise, which raises raw returns but not risk-adjusted ones, so high beta can be a crowded trade. In addition, Hsu, Kalesnik and Li (2012) found equal weighting beat the S&P 500 from 1967-2010, mostly through value and small-cap tilts, which Campbell and Vuolteenaho's (2003) "bad beta, good beta" paper helps explain. That's why v2 includes an equal weight sector portfolio as a comparison.
+A few other papers shaped the setup. Zenner et al. (2008) put the market risk premium at about 5-7% a year, so sitting in cash has a real cost. Genc, Moench and Pazarbasi (2025) found that fund managers move into high beta stocks when rates rise, which raises raw returns but not risk-adjusted ones. Hsu, Kalesnik and Li (2012) found that equal weighting beat the S&P 500 from 1967-2010, mostly through value and small-cap tilts, which Campbell and Vuolteenaho's (2003) "bad beta, good beta" paper helps explain. For that reason, v2 is also compared against an equal weight sector portfolio.
 
 ### 2.4 Trend following and volatility management
 
-v3's trend filter comes from Gayed and Bilello (2016). They held a leveraged S&P 500 only when it was above its 200-day moving average (T-bills otherwise), and from 1928-2015 that beat both regular and leveraged buy and hold. Faber (2007) does basically the same thing with a 10-month average. For how often to check, Clare et al. (2013) found that for the S&P 500, checking at month end was as good as checking daily, and stop losses didn't help.
+The trend filter in v3 comes from Gayed and Bilello (2016), who held a leveraged S&P 500 only while it was above its 200-day moving average and moved to T-bills otherwise. From 1928-2015, that beat both regular and leveraged buy and hold. Faber (2007) uses the same idea with a 10-month average. On how often to check, Clare et al. (2013) found that for the S&P 500, checking at month end did about as well as checking daily, and that stop losses did not help.
 
-For position size, Moreira and Muir (2017) and Harvey et al. (2018) found that scaling exposure by 1/variance raised the market's Sharpe ratio. This is basically the same thing as the Kelly rule from Rotando and Thorp (1992), where leverage equals the risk premium divided by the variance. v1's volatility targeting and v3's Kelly-style sizing both come from this idea.
+For position size, Moreira and Muir (2017) and Harvey et al. (2018) found that scaling exposure by 1/variance raised the market's Sharpe ratio. This is close to the Kelly rule in Rotando and Thorp (1992), where leverage equals the risk premium divided by the variance. v1's volatility targeting and v3's Kelly-style sizing both come from this idea.
 
-On the other hand, a couple of papers were basically warnings. Cederburg et al. (2020) found volatility management usually did not beat buy and hold out of sample, and Zakamulin (2014) found moving average timing mostly wins in a few big bear markets and lags in bull markets once you test it out of sample with realistic costs. As it turns out, my results line up with both.
+On the other hand, two of the papers read more like warnings. Cederburg et al. (2020) found that volatility management usually did not beat buy and hold out of sample, and Zakamulin (2014) found that moving average timing mostly wins in a few large bear markets and lags in bull markets once it is tested out of sample with realistic costs. My results end up agreeing with both.
 
 ## 3. Data
 
 ### 3.1 Sources
 
-`get_data.py` downloads daily prices from Yahoo Finance through `yfinance` for every ticker in Table 1 except SGOV, which only goes back to 2020. Instead, cash is modeled with the 3-month T-bill rate (DTB3) from FRED, which doesn't need an API key. From Yahoo I use both Adj Close and Close. Adj Close includes reinvested dividends, so its percent change is the total return, while Close is the price only. The difference between the two on a given day is the dividend, which the tax model needs. The data runs from January 1993 to October 29, 2026.
+`get_data.py` downloads daily prices from Yahoo Finance using `yfinance` for every ticker in Table 1 except SGOV, which only starts in 2020. Cash is modeled with the 3-month T-bill rate (DTB3) from FRED instead, which doesn't need an API key. I use both the Adj Close and Close columns from Yahoo. Adj Close includes reinvested dividends, so its percent change is the total return, and Close is the price only. The gap between the two on a given day is the dividend, which the tax model needs. The sample runs from January 1993 to October 29, 2026.
 
 ### 3.2 Rebuilding SSO and UPRO before they existed
 
-SSO didn't exist before June 2006 and UPRO didn't exist before June 2009, so for those years I rebuild them from SPY. The daily return of a fund with leverage $L$ is
+SSO did not exist before June 2006 and UPRO did not exist before June 2009, so for those years I rebuild them from SPY. The daily return of a fund with leverage $L$ is
 
 $$r_{L,t} = L \cdot r_{SPY,t} - (L-1) \cdot r_{f,t} - \frac{(L-1) \cdot s + f}{252} \qquad (1)$$
 
-where $r_{f,t}$ is the daily T-bill return, $s$ is the extra borrowing spread, and $f$ is the fund's expense ratio. I fit the spread ($s$ = 0.7% for SSO and 0.6% for UPRO) so the rebuilt fund grows at the same rate as the real one over the years where both exist. The rebuilt and real daily returns end up with a 0.996 (SSO) and 0.998 (UPRO) correlation.
+where $r_{f,t}$ is the daily T-bill return, $s$ is the extra borrowing spread, and $f$ is the fund's expense ratio. I fit the spread ($s$ = 0.7% for SSO and 0.6% for UPRO) so the rebuilt fund grows at the same rate as the real one over the years where both exist. The rebuilt and real daily returns have correlations of 0.996 (SSO) and 0.998 (UPRO).
 
 ## 4. Methodology
 
 ### 4.1 Strategy rules
 
-Every version calculates its signal at the month end close. For v1, if SPY's total return index is above its N-month average, the trend is up and the strategy holds SPY, and if not it moves to T-bills (or only partly, using an "off weight"). In addition, the SPY weight is scaled by volatility,
+Every version computes its signal at the month end close. For v1, if SPY's total return index is above its N-month average, the trend is up and the strategy holds SPY, and if not it moves to T-bills (or only partly, using an "off weight"). In addition, the SPY weight is scaled by volatility,
 
 $$w_t = \min\left(1, \frac{\sigma^*}{\hat{\sigma}_t}\right) \qquad (2)$$
 
@@ -116,11 +116,11 @@ The trade goes in at the next day's close after the signal, since you can't trad
 
 ### 4.3 Taxes
 
-The account is taxable, and I only model federal tax. Every purchase is its own tax lot, and the oldest shares are sold first (FIFO). Short-term gains, T-bill interest and SSO/UPRO payouts are taxed at 22%, since leveraged funds mostly pay out short-term gains. On the other hand, long-term gains and SPY/sector dividends are taxed at 15%. Losses offset gains and carry forward, the wash sale rule is applied, and the tax bill comes out of the account every December. I don't credit the $3,000 deduction against other income, since that saving happens outside the account. The results are shown after tax and sold at the end, which means the last step also pays the tax on any gains that haven't been sold yet. I think that's the fairer comparison, since buy and hold always has a big untaxed gain sitting in it.
+The account is taxable, and I only model federal tax. Every purchase is its own tax lot, and the oldest shares are sold first (FIFO). Short-term gains, T-bill interest and SSO/UPRO payouts are taxed at 22%, since leveraged funds mostly pay out short-term gains. Long-term gains and SPY/sector dividends are taxed at 15%. Losses offset gains and carry forward, the wash sale rule is applied, and the tax bill comes out of the account every December. I don't credit the $3,000 deduction against other income, since that saving happens outside the account. The results are shown after tax and sold at the end, which means the last step also pays the tax on any gains that haven't been sold yet. I think that's the fairer comparison, since buy and hold always has a big untaxed gain sitting in it.
 
 ### 4.4 Testing design
 
-For the fixed split, settings are picked on 2000-2009 by after-tax growth, then locked in and tested on 2010 to now. v1 is a little different, since it uses 1995-2009 and ranks by Sharpe ratio instead, because ranking by growth would just pick whatever holds the most SPY. For the walk-forward, every setting is scored each January on all the years before it, and the best one is traded for the next 12 months. v3's walk-forward starts in 2000 (scored from 1994) so it has to get through the dot com crash, while v2's starts in 2005 because the sector ETFs only go back to December 1998.
+For the fixed split, settings are picked on 2000-2009 by after-tax growth, then locked in and tested on 2010 to now. v1 uses 1995-2009 and ranks by Sharpe ratio instead, because ranking by growth would just pick whatever holds the most SPY. For the walk-forward, every setting is scored each January on all the years before it, and the best one is traded for the next 12 months. v3's walk-forward starts in 2000 (scored from 1994) so it has to get through the dot com crash, while v2's starts in 2005 because the sector ETFs only go back to December 1998.
 
 ## 5. Results
 
@@ -141,9 +141,9 @@ Table 3 shows the main results. From 2005 (where v2's walk-forward starts), v2 m
 
 Notes: Fixed split settings were picked on 2000-2009 (1995-2009 for v1). Only v3 has a walk-forward from 2000. Drawdowns are from before-tax daily returns.
 
-v1 did what it was built to do on risk, but not on return. From 2010 its max drawdown was about -21% vs -34% for SPY and its beta was only 0.57, but its Sharpe ratio was lower (0.65 vs 0.77), so the smoother ride didn't make up for the lost return. v2's fixed split pick made 9.9% a year vs 12.9% for SPY, with a worse drawdown (-45% vs -34%).
+v1 lowered risk the way it was supposed to. From 2010 its max drawdown was about -21% vs -34% for SPY and its beta was 0.57, but its Sharpe ratio was also lower (0.65 vs 0.77), so the smoother ride did not make up for the lost return. v2's fixed split pick made 9.9% a year vs 12.9% for SPY, with a worse drawdown (-45% vs -34%).
 
-v3's rule ended up being 3x (100% UPRO) whenever SPY is above its 200-day moving average at month end, and 100% T-bills when it's below. From 2010 on it was at 3x about 84% of the time and in T-bills the rest, and it beat SSO in 8 of the 17 years before tax.
+The setting v3 picked holds 3x (100% UPRO) whenever SPY is above its 200-day moving average at month end, and 100% T-bills when it's below. From 2010 on it was at 3x about 84% of the time and in T-bills the rest, and it beat SSO in 8 of the 17 years before tax.
 
 ![drawdowns since 2010](images/drawdowns_2010.png)
 
@@ -166,37 +166,37 @@ Since a single start date can make any strategy look good or bad, Table 4 runs t
 
 Notes: Same signals in every row, only the start date changes. Each row's taxes start from a new $10,000 account.
 
-The edge shrinks or flips with later start years. Starting in 2010, 2015 or 2020, it actually trailed SSO every time, and the 2015 start even trailed plain SPY. The -82% from 2000 happened because scoring 1994-1999 picked plain 3x buy and hold for 2000 and 2001, right into the dot com crash, and it only switched to the trend filter in 2002.
+The lead shrinks with later start years and eventually reverses. From 2010, 2015 and 2020 the strategy trailed SSO, and from 2015 it also trailed SPY. The -82% from 2000 happened because scoring 1994-1999 picked plain 3x buy and hold for 2000 and 2001, right into the dot com crash, and it only switched to the trend filter in 2002.
 
 ### 5.3 Where the edge comes from
 
-Most of v3's edge came from bear markets. It avoided most of 2000-2002 and 2008, which is exactly where buy and hold leverage gets wiped out. For example, from 2000-2009 buy and hold SSO lost about 11% a year after tax and UPRO lost about 22%. On the other hand, in bull markets with quick dips (most of 2010-2026), the filter kept selling near the bottom and buying back higher. You can see that in Figure 2 in 2011, 2015-2016, late 2018, 2020 and 2022-2023. This matches what Zakamulin (2014) found for moving average timing in general.
+v3's gains are concentrated in bear markets. It was out of the market for most of 2000-2002 and 2008, which is when buy and hold leverage did the most damage. For example, from 2000-2009 buy and hold SSO lost about 11% a year after tax and UPRO lost about 22%. On the other hand, in bull markets with quick dips (most of 2010-2026), the filter often sold near the bottom and bought back higher, which shows up in Figure 2 in 2011, 2015-2016, late 2018, 2020 and 2022-2023. Zakamulin (2014) reports the same pattern for moving average timing in general.
 
 ### 5.4 The conditional beta test
 
-The conditional beta idea behind v2 didn't hold up once I made it tradable. Each month I regressed the sectors' next-month returns on their beta from the previous 12 months. When I split months by whether SPY beat T-bills that month, high beta sectors did better in up months (t = 3.9 from 2010 on) and worse in down months (t = -4.9), which matches the papers. However, that split uses a return you don't know yet, and if betas stay about the same over time, it mostly comes out that way automatically. When I split by the trend signal you actually know at the start of the month, the effect basically disappeared (t = 0.06 in uptrends from 2010 on, -0.21 in training). That's also why v2's walk-forward never picked the high beta sectors, and it only picked the low beta sectors for downtrends in 2024-2026.
+To test the idea behind v2, each month I regressed the sectors' next-month returns on their beta over the previous 12 months. When I split months by whether SPY beat T-bills that month, high beta sectors did better in up months (t = 3.9 from 2010 on) and worse in down months (t = -4.9), which matches the papers. However, that split uses a return you don't know yet, and if betas stay about the same over time, it mostly comes out that way automatically. When I split by the trend signal known at the start of the month instead, the effect mostly disappeared (t = 0.06 in uptrends from 2010 on, -0.21 in training). This is also why v2's walk-forward never picked the high beta sectors and only used the low beta sectors for downtrends in 2024-2026.
 
 ## 6. Robustness
 
 ### 6.1 Rebuilt vs real UPRO
 
-UPRO only exists since June 25, 2009, so everything before that is rebuilt using equation (1). In the rebuilt years (2000 to June 2009), the strategy lost 3.5% a year before tax, compared to -3.0% for SPY, -14.8% for SSO and -27.7% for UPRO. Since UPRO actually started trading, it made 19.9% a year vs 14.8% for SPY, 24.4% for SSO and 31.8% for UPRO. This means all of v3's edge over leveraged buy and hold comes from years where UPRO had to be rebuilt, so the result depends a lot on how realistic the rebuilt UPRO is.
+UPRO has only existed since June 25, 2009, so everything before that is rebuilt using equation (1). In the rebuilt years (2000 to June 2009), the strategy lost 3.5% a year before tax, compared to -3.0% for SPY, -14.8% for SSO and -27.7% for UPRO. Since UPRO started trading, it made 19.9% a year vs 14.8% for SPY, 24.4% for SSO and 31.8% for UPRO. This means all of v3's edge over leveraged buy and hold comes from years where UPRO had to be rebuilt, so the result depends a lot on how realistic the rebuilt UPRO is.
 
 ### 6.2 Statistical significance
 
-Over 26 years, v3's average yearly lead was about 10.7 points over SPY (ahead in 15 years, t = 1.66) and about 4.7 points over SSO (ahead in 14 years, t = 0.91). I'd want at least 2 before calling either one convincing. Its Sharpe ratio was 0.43 with a standard error of 0.20 (Lo 2002). The deflated Sharpe ratio (Bailey and Lopez de Prado 2014), which adjusts for fat tails and for how many settings I tried, puts the chance that the true Sharpe is above zero at 92% with 42 trials and 88% with 277. Although that sounds good, SPY's Sharpe over the same years was about the same (0.41), so it doesn't really show the strategy is better.
+Over 26 years, v3's average yearly lead was about 10.7 points over SPY (ahead in 15 years, t = 1.66) and about 4.7 points over SSO (ahead in 14 years, t = 0.91). I'd want at least 2 before calling either one convincing. Its Sharpe ratio was 0.43 with a standard error of 0.20 (Lo 2002). The deflated Sharpe ratio (Bailey and Lopez de Prado 2014), which adjusts for fat tails and for how many settings I tried, puts the chance that the true Sharpe is above zero at 92% with 42 trials and 88% with 277. Although that sounds good, SPY's Sharpe over the same years was about the same (0.41), so it doesn't show the strategy is better.
 
 ### 6.3 Monte Carlo
 
-This builds 1,000 new 10-year S&P 500 paths out of random blocks of SPY's real daily returns since 1993 (with the T-bill rate and VIX from the same days), rebuilds SSO and UPRO from each path, and re-runs the rule on each one, so the trend filter can actually fail. With 6-month blocks, v3 beat SPY in 55% of paths and SSO in 41%, and with 1-year blocks it beat SPY in 65% and SSO in 51%. In addition, its median max drawdown (-68% and -62%) was worse than SSO's (-60% and -59%). Even though stitching blocks together breaks up long trends, which makes this a tough test for a trend filter, it still doesn't show a clear edge over SSO.
+The Monte Carlo builds 1,000 new 10-year S&P 500 paths out of random blocks of SPY's real daily returns since 1993 (with the T-bill rate and VIX from the same days), rebuilds SSO and UPRO from each path, and re-runs the rule on each one, so the trend filter can actually fail. With 6-month blocks, v3 beat SPY in 55% of paths and SSO in 41%, and with 1-year blocks it beat SPY in 65% and SSO in 51%. In addition, its median max drawdown (-68% and -62%) was worse than SSO's (-60% and -59%). Even though stitching blocks together breaks up long trends, which makes this a tough test for a trend filter, it still doesn't show a clear edge over SSO.
 
 ### 6.4 Rolling window walk-forward
 
-The walk-forward in Section 5 scores every year back to 1994, so 2000-2002 and 2008 stay in the score forever, which is probably why it picks the same rule every year. When it only looks at the last 5 years, it switches to plain 3x buy and hold from 2014-2022. That version ended at 10.3% a year after tax, also with an -82% drawdown. So the "same rule every year" result really just comes from always scoring back to 1994.
+The walk-forward in Section 5 scores every year back to 1994, so 2000-2002 and 2008 stay in the score forever, which is probably why it picks the same rule every year. When it only looks at the last 5 years, it switches to plain 3x buy and hold from 2014-2022. That version ended at 10.3% a year after tax, also with an -82% drawdown. So the "same rule every year" result comes from always scoring back to 1994.
 
 ### 6.5 Trade timing
 
-Trading at the signal's own close (which isn't actually possible) would have made 11.2% a year after tax from 2000, compared to 9.8% for the next day and 10.7% for two days later. From 2010 the same three numbers are 17.2%, 14.5% and 15.7%. A one-day difference moving the result that much is a warning sign on its own.
+Trading at the signal's own close (which isn't actually possible) would have made 11.2% a year after tax from 2000, compared to 9.8% for the next day and 10.7% for two days later. From 2010 the same three numbers are 17.2%, 14.5% and 15.7%. A one-day change in timing moving the return by about a point a year suggests the result is fragile.
 
 ### 6.6 Moving average length
 
@@ -211,7 +211,7 @@ The papers say anywhere from 200-300 days works, and if the result only showed u
 
 Notes: Buy and hold SSO made 8.4% over the same years. These numbers are higher than the 9.8% walk-forward in Table 3 because the walk-forward held 3x with no filter in 2000 and 2001.
 
-This was the one check that went its way, since every length from 150 to 300 days beat SSO. However, 100 days didn't.
+This is the one check that favors the rule, since every length from 150 to 300 days beat SSO. The 100-day version did not.
 
 ### 6.7 Outside the US
 
@@ -230,15 +230,15 @@ Table 6 runs the same rule (200 days, 3x, monthly, next-day trades) on Japan's N
 
 Notes: The Nikkei is price only, and the DAX includes dividends.
 
-The results were mixed. On both indexes the rule beat holding 2x from 1994 or 2000 but lost badly from 2010 on. Furthermore, on the Nikkei from 1994 the 3x rule actually did worse than just holding the plain index.
+The results outside the US are mixed. On both indexes the rule beat holding 2x from 1994 or 2000 but lost badly from 2010 on. Furthermore, on the Nikkei from 1994 the 3x rule did worse than holding the plain index.
 
 ## 7. Conclusion
 
-The 200-day 3x rule beat buy and hold SPY and SSO over stretches that include a long bear market, but mostly in years where UPRO had to be rebuilt. Since the real UPRO started trading it has trailed leveraged buy and hold. In addition, the lead isn't statistically strong, it depends on the exact trade day, and the drawdowns got to -82%. The simpler versions didn't do better either. v1 cut risk but gave up too much return, and v2 only beat SPY after taxes because it sat out 2008. Simply put, I don't think this backtest shows a proven way to beat buy and hold. It's a high-risk rule that has helped in long crashes and lagged in long bull markets.
+The 200-day 3x rule beat buy and hold SPY and SSO over periods that include a long bear market, but mostly in years where UPRO had to be rebuilt, and it has trailed leveraged buy and hold since the real UPRO started trading. Its lead is not statistically significant, and the result moves noticeably depending on which day the trade goes in. The simpler versions did not do better. v1 reduced risk but gave up too much return, and v2 beat SPY after taxes only because it was out of the market in 2008. Based on this backtest, I don't think timing beta is a reliable way to beat buy and hold, especially with drawdowns as large as -82%.
 
 ### 7.1 Limitations
 
-There are a few things this backtest can't account for. First, 3x leverage is a lot of risk. A one day crash like October 1987 (-20.5%) would be about -60% at 3x, and since the rule only checks at month end it would still be fully invested. The worst single day in the backtest was already -19.8% (August 8, 2011). Second, there's no live forward test yet, so the real test is running the monthly signal going forward and tracking it. Third, the rebuilt SSO/UPRO prices before 2006/2009 are an approximation, and a lot of v3's edge comes from those years. In addition, I only model federal tax at today's rates, the wash sale rule is simplified (the holding period doesn't carry over), and taxes are paid in December instead of April. 3x was also the most leverage I allowed and it won, so the result is partly just a bet on leverage. Lastly, 30 years of data only has a few real bear markets, so a handful of events drive most of the results.
+This backtest has several limitations. First, 3x leverage is a lot of risk. A one-day crash like October 1987 (-20.5%) would be about -60% at 3x, and since the rule only checks at month end it would still be fully invested. The worst single day in the backtest was already -19.8% (August 8, 2011). Second, there is no live forward test yet, so the real test is running the monthly signal going forward and tracking it. Third, the rebuilt SSO/UPRO prices before 2006/2009 are an approximation, and a lot of v3's edge comes from those years. In addition, I only model federal tax at today's rates, the wash sale rule is simplified (the holding period doesn't carry over), and taxes are paid in December instead of April. 3x was also the most leverage I allowed and it won, so the result is partly just a bet on leverage. Lastly, 30 years of data only has a few real bear markets, so a handful of events drive most of the results.
 
 ## References
 

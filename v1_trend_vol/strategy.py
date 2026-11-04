@@ -76,7 +76,6 @@ def load_data(spy_file=os.path.join(data_folder, "SPY.csv"), tbill_file=os.path.
     data["price_return"] = data["close"].pct_change().fillna(0)
     data["dividend_yield"] = (data["spy_return"] - data["price_return"]).clip(lower=0)
 
-    # daily return from holding T-bills
     data["tbill_return"] = (1 + data["tbill_rate"] / 100) ** (1 / trading_days) - 1
     data["cash_return"] = (1 + data["tbill_rate"] / 100 - cash_fee) ** (1 / trading_days) - 1
 
@@ -84,7 +83,6 @@ def load_data(spy_file=os.path.join(data_folder, "SPY.csv"), tbill_file=os.path.
 
 
 def get_month_ends(data):
-    # last trading day of every month
     month_ends = data.groupby(data.index.to_period("M")).tail(1).index
     return month_ends
 
@@ -123,7 +121,7 @@ def get_target_exposure(data, sma_months, vol_window, target_vol, off_weight):
 
 def year_end_tax(st_gain, lt_gain, qualified_dividends, ordinary_income, st_carry, lt_carry):
     # rough federal tax for one year. losses net short vs short and long vs long first
-    # ordinary_income = T-bill interest + SSO/UPRO payouts (those are mostly short term gains)
+    # ordinary_income = T-bill interest (v1 never holds SSO/UPRO)
 
     st = st_gain + st_carry
     lt = lt_gain + lt_carry
@@ -259,7 +257,7 @@ def simulate_account(data, weights, start=None, end=None, taxes=False, lag=None)
             if lot[1] <= 1e-12:
                 lots[a].pop(0)
 
-            if gain >= 0:
+            if gain >= 0 or not apply_wash_sale:
                 add_gain(gain, long_term)
                 continue
 
@@ -307,7 +305,7 @@ def simulate_account(data, weights, start=None, end=None, taxes=False, lag=None)
         lots[a].append([dates[i], units, basis, units - left])
 
     def rebalance(target, i):
-        # sell first, then buy
+        # sells go first so the cash is there for the buys
         nonlocal cash
         total = holdings.sum() + cash
         wanted = np.nan_to_num(target) * total
@@ -349,7 +347,6 @@ def simulate_account(data, weights, start=None, end=None, taxes=False, lag=None)
     for i in range(n_days):
 
         if i > 0:
-            # daily returns
             if taxes:
                 for a in range(n_assets):
                     if holdings[a] > 0:

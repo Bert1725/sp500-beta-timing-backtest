@@ -17,13 +17,12 @@ from strategy import (load_data, get_target_leverage, leverage_to_weights, get_s
 
 
 def month_is_over(last_date):
-    # the latest close is the real month end if the calendar has already moved on, or if the next
-    # weekday falls in a new month. a holiday on the last weekday (Good Friday on the 29th, say)
-    # slips through, but then it just shows up as the official signal the next morning
+    # true if the latest close is the last trading day of its month
+    # (misses holidays like good friday, but then it shows up the next morning anyway)
     today = datetime.now(ZoneInfo("America/New_York")).date()
     if (last_date + BDay(1)).month != last_date.month:
         return True
-    # only trust the calendar if the data is current (--no-download can leave it a few days behind)
+    # --no-download can leave the data a few days old, so only trust the calendar if it's recent
     return today.month != last_date.month and (today - last_date.date()).days <= 4
 
 

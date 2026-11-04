@@ -46,7 +46,7 @@ interest_rate = 0.22     # T-bill interest = ordinary income
 loss_limit = 3000
 execution_lag = 1        # trade the day after the signal
 use_loss_deduction = False
-ordinary_payout_tickers = ["SSO", "UPRO"]   # leveraged ETF payouts are mostly short term gains
+ordinary_payout_tickers = ["SSO"]   # leveraged ETF payouts are mostly short term gains
 apply_wash_sale = True
 beta_benchmark = "spy"   # or "leave_one_out"
 
@@ -122,7 +122,6 @@ def load_data(folder=data_folder):
 
 
 def get_month_ends(dates):
-    # last trading day of every month
     month_ends = pd.Series(dates, index=dates).groupby(dates.to_period("M")).tail(1).index
     return month_ends
 
@@ -215,7 +214,7 @@ def get_target_weights(data, sma_months, up_mode, up_size, down_mode,
 
 def year_end_tax(st_gain, lt_gain, qualified_dividends, ordinary_income, st_carry, lt_carry):
     # rough federal tax for one year. losses net short vs short and long vs long first
-    # ordinary_income = T-bill interest + SSO/UPRO payouts (those are mostly short term gains)
+    # ordinary_income = T-bill interest + SSO payouts (those are mostly short term gains)
 
     st = st_gain + st_carry
     lt = lt_gain + lt_carry
@@ -399,7 +398,7 @@ def simulate(data, weights, start=None, end=None, taxes=False, lag=None):
         lots[a].append([dates[i], units, basis, units - left])
 
     def rebalance(target, i):
-        # sell first, then buy
+        # sells go first so the cash is there for the buys
         nonlocal cash
         total = holdings.sum() + cash
         wanted = np.nan_to_num(target) * total
@@ -441,7 +440,6 @@ def simulate(data, weights, start=None, end=None, taxes=False, lag=None):
     for i in range(n_days):
 
         if i > 0:
-            # daily returns
             if taxes:
                 for a in range(n_assets):
                     if holdings[a] > 0:

@@ -133,7 +133,6 @@ def load_data(folder=data_folder):
 
 
 def get_month_ends(dates):
-    # last trading day of every month
     month_ends = pd.Series(dates, index=dates).groupby(dates.to_period("M")).tail(1).index
     return month_ends
 
@@ -142,7 +141,6 @@ def get_check_dates(dates, check):
     if check == "monthly":
         return get_month_ends(dates)
     if check == "weekly":
-        # last trading day of each week
         weeks = pd.Series(dates, index=dates).groupby(dates.to_period("W-FRI")).tail(1).index
         return weeks
     return dates
@@ -396,7 +394,7 @@ def simulate(data, weights, start=None, end=None, taxes=False, lag=None):
         lots[a].append([dates[i], units, basis, units - left])
 
     def rebalance(target, i):
-        # sell first, then buy
+        # sells go first so the cash is there for the buys
         nonlocal cash
         total = holdings.sum() + cash
         wanted = np.nan_to_num(target) * total
@@ -438,7 +436,6 @@ def simulate(data, weights, start=None, end=None, taxes=False, lag=None):
     for i in range(n_days):
 
         if i > 0:
-            # daily returns
             if taxes:
                 for a in range(n_assets):
                     if holdings[a] > 0:
@@ -661,7 +658,7 @@ def after_tax_cagr(result):
 def block_bootstrap(strategy_returns, spy_returns, cash_returns,
                     years=5, block_size=21, sims=2000, seed=314):
     # resamples 21 day blocks of the strategy's own returns (same blocks for both, so it's paired)
-    # note: this can't show the trend filter failing, see rule_monte_carlo in v3
+    # note: this can't show the trend filter failing, rule_monte_carlo below can
 
     rng = np.random.default_rng(seed)
 
