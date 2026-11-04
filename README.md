@@ -30,7 +30,15 @@ The rest of this README starts with background on the ETFs and the papers the ru
 
 ## 2. Background and related literature
 
-### 2.1 The ETFs
+### 2.1 What beta means
+
+Beta measures how much an asset tends to move when the market moves. It is estimated as
+
+$$\beta = \frac{\text{Cov}(r_i, r_m)}{\text{Var}(r_m)} \qquad (1)$$
+
+where $r_i$ is the asset's daily return and $r_m$ is the market's (SPY's) daily return over the same window. A beta of 1 means the asset moves with the market about one for one, so SPY has a beta of 1 by definition. For example, a sector with a beta of 1.3 has historically moved about 1.3% for every 1% move in the S&P 500, while T-bills have a beta of about 0. SSO and UPRO are built to have daily betas of about 2 and 3. Timing beta in this project means changing that number over time, holding more of it when the trend is up and less when it's down, instead of keeping it at 1 like buy and hold.
+
+### 2.2 The ETFs
 
 Table 1 lists every ticker used in the project and what it's used for.
 
@@ -48,19 +56,17 @@ Table 1 lists every ticker used in the project and what it's used for.
 
 Notes: Expense ratios for the ETFs are already included in their Yahoo Finance prices. They are only applied directly when SSO and UPRO are rebuilt before they existed (Section 3.2) and to the cash return.
 
-When I say beta, I mean how much something moves with the market. SPY has a beta of 1, SSO about 2, UPRO about 3, and T-bills 0. For example, a sector with a beta of 1.3 has historically moved about 1.3% for every 1% move in the S&P 500.
-
-### 2.2 Why leveraged ETFs don't just return 2x or 3x
+### 2.3 Why leveraged ETFs don't just return 2x or 3x
 
 SSO and UPRO reset their leverage every day, so they deliver 2x or 3x of each day's return. Over a month or a year, the result can be quite different from 2x or 3x. When the market moves in one direction for a while, the daily reset helps slightly, but when it moves back and forth, the reset costs money. For example, say the S&P 500 is up 10% one day and down 10% the next. That leaves it down 1%, since 1.10 x 0.90 = 0.99. A 3x fund would be up 30% and then down 30%, and 1.30 x 0.70 = 0.91, so it ends down 9% instead of the 3% you might expect. This is usually called volatility decay, and Cheng and Madhavan (2009) work through it in detail. It shows up in recent data too. Bianchi and Goldberg (2026) point out that the S&P 500 was roughly flat over 2022-2023 while UPRO lost 28%. This is the main reason v3 uses a trend filter, since the goal is to hold leverage only while there is a trend.
 
-### 2.3 Beta and conditional beta
+### 2.4 Beta and conditional beta
 
 v2 is based mostly on Lakonishok and Shapiro (1984). Across NYSE stocks from 1962-1980, they found that beta alone did not explain returns, but high beta stocks did better than low beta stocks in up markets and worse in down markets. Pettengill, Sundaram and Mathur (1995) built a formal test around this, and Xiao (2016) for the US and Elsas, El-Shaer and Theissen (2003) for Germany found the same pattern with it. So beta seems to pay off mainly when you know which way the market is going. The problem is that their test splits months by the market's return in that same month, which nobody knows ahead of time. The question for v2 is whether a trend signal that is known ahead of time can stand in for it.
 
 A few other papers shaped the setup. Zenner et al. (2008) put the market risk premium at about 5-7% a year, so sitting in cash has a real cost. Genc, Moench and Pazarbasi (2025) found that fund managers move into high beta stocks when rates rise, which raises raw returns but not risk-adjusted ones. Hsu, Kalesnik and Li (2012) found that equal weighting beat the S&P 500 from 1967-2010, mostly through value and small-cap tilts, which Campbell and Vuolteenaho's (2003) "bad beta, good beta" paper helps explain. For that reason, v2 is also compared against an equal weight sector portfolio.
 
-### 2.4 Trend following and volatility management
+### 2.5 Trend following and volatility management
 
 The trend filter in v3 comes from Gayed and Bilello (2016), who held a leveraged S&P 500 only while it was above its 200-day moving average and moved to T-bills otherwise. From 1928-2015, that beat both regular and leveraged buy and hold. Faber (2007) uses the same idea with a 10-month average. On how often to check, Clare et al. (2013) found that for the S&P 500, checking at month end did about as well as checking daily, and that stop losses did not help.
 
@@ -78,7 +84,7 @@ On the other hand, two of the papers read more like warnings. Cederburg et al. (
 
 SSO did not exist before June 2006 and UPRO did not exist before June 2009, so for those years I rebuild them from SPY. The daily return of a fund with leverage $L$ is
 
-$$r_{L,t} = L \cdot r_{SPY,t} - (L-1) \cdot r_{f,t} - \frac{(L-1) \cdot s + f}{252} \qquad (1)$$
+$$r_{L,t} = L \cdot r_{SPY,t} - (L-1) \cdot r_{f,t} - \frac{(L-1) \cdot s + f}{252} \qquad (2)$$
 
 where $r_{f,t}$ is the daily T-bill return, $s$ is the extra borrowing spread, and $f$ is the fund's expense ratio. I fit the spread ($s$ = 0.7% for SSO and 0.6% for UPRO) so the rebuilt fund grows at the same rate as the real one over the years where both exist. The rebuilt and real daily returns have correlations of 0.996 (SSO) and 0.998 (UPRO).
 
@@ -88,7 +94,7 @@ where $r_{f,t}$ is the daily T-bill return, $s$ is the extra borrowing spread, a
 
 Every version computes its signal at the month end close. For v1, if SPY's total return index is above its N-month average, the trend is up and the strategy holds SPY, and if not it moves to T-bills (or only partly, using an "off weight"). In addition, the SPY weight is scaled by volatility,
 
-$$w_t = \min\left(1, \frac{\sigma^*}{\hat{\sigma}_t}\right) \qquad (2)$$
+$$w_t = \min\left(1, \frac{\sigma^*}{\hat{\sigma}_t}\right) \qquad (3)$$
 
 where $\sigma^*$ is the target volatility and $\hat{\sigma}_t$ is SPY's recent realized volatility.
 
@@ -96,7 +102,7 @@ v2 uses the same kind of trend signal (8, 10 or 12 months). In an uptrend it tak
 
 v3 holds SPY, SSO, UPRO and T-bills, so leverage can be anywhere from 0 to 3x. The trend filter is either the 200-day average, the 10-month average, or none. Leverage is either a fixed 2x or 3x, or a Kelly-style rule,
 
-$$L_t = \min\left(3, k \cdot \frac{\mu}{\hat{\sigma}_t^2}\right) \qquad (3)$$
+$$L_t = \min\left(3, k \cdot \frac{\mu}{\hat{\sigma}_t^2}\right) \qquad (4)$$
 
 with $k$ = 0.5 or 1, a risk premium $\mu$ of 6% (the middle of Zenner et al.'s range), and volatility from either the last 21 days or the VIX. Table 2 lists every setting that was tested.
 
@@ -180,7 +186,7 @@ To test the idea behind v2, each month I regressed the sectors' next-month retur
 
 ### 6.1 Rebuilt vs real UPRO
 
-UPRO has only existed since June 25, 2009, so everything before that is rebuilt using equation (1). In the rebuilt years (2000 to June 2009), the strategy lost 3.5% a year before tax, compared to -3.0% for SPY, -14.8% for SSO and -27.7% for UPRO. Since UPRO started trading, it made 19.9% a year vs 14.8% for SPY, 24.4% for SSO and 31.8% for UPRO. This means all of v3's edge over leveraged buy and hold comes from years where UPRO had to be rebuilt, so the result depends heavily on how realistic the rebuilt UPRO is.
+UPRO has only existed since June 25, 2009, so everything before that is rebuilt using equation (2). In the rebuilt years (2000 to June 2009), the strategy lost 3.5% a year before tax, compared to -3.0% for SPY, -14.8% for SSO and -27.7% for UPRO. Since UPRO started trading, it made 19.9% a year vs 14.8% for SPY, 24.4% for SSO and 31.8% for UPRO. This means all of v3's edge over leveraged buy and hold comes from years where UPRO had to be rebuilt, so the result depends heavily on how realistic the rebuilt UPRO is.
 
 ### 6.2 Statistical significance
 
