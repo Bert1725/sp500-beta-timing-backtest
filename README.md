@@ -290,7 +290,7 @@ My first pass made the strategies look much better than they were, so I went bac
 
 ### B.1 Computational requirements
 
-All results were produced on a Mac with Python 3.9.6. Package versions are pinned in `requirements.txt` (pandas 2.3.3, numpy 2.0.2, matplotlib 3.9.4, yfinance 1.2.0 and jupyter 1.1.1), and the last cell of each notebook prints the versions it was actually run with. The data is not stored in the repo, so `get_data.py` downloads it from Yahoo Finance and FRED. Because Yahoo occasionally revises historical prices, each notebook also prints the last date and a SHA-256 hash for every data file it reads. That way, a later download can be checked against the one used here.
+I ran everything on a Mac with Python 3.9.6. The package versions are pinned in `requirements.txt` (pandas 2.3.3, numpy 2.0.2, matplotlib 3.9.4, yfinance 1.2.0 and jupyter 1.1.1), and the last cell of each notebook prints the versions it actually ran with. The data isn't stored in the repo. Instead, `get_data.py` downloads it from Yahoo Finance and FRED. Since Yahoo sometimes revises old prices, each notebook also prints the last date and a SHA-256 hash for every data file it reads, which makes it possible to check a later download against mine.
 
 ### B.2 Repository structure
 
@@ -304,7 +304,7 @@ v2_conditional_beta/        adds SSO and the 9 sector SPDRs
 v3_leveraged_beta/          SPY / SSO / UPRO, trend filters + fixed or Kelly leverage up to 3x
 ```
 
-Each version folder has a `backtest.ipynb` with the full analysis, a `strategy.py` with the rules and the account / tax simulator, and a `monthly_signal.py` that prints what to hold next month.
+Inside each version folder, `backtest.ipynb` is the full analysis, `strategy.py` has the rules and the account / tax simulator, and `monthly_signal.py` prints what to hold next month.
 
 ### B.3 Instructions
 
@@ -315,7 +315,7 @@ pip install -r requirements.txt
 python get_data.py
 ```
 
-After the download finishes, open a notebook and run all of its cells from top to bottom. The notebooks are independent of each other, so they can be run in any order. Data downloaded on a later date will give slightly different numbers. To get next month's position for v3, run this after the close on the last trading day of the month and place the trade the next day:
+When the download is done, open a notebook and run all of its cells in order. None of the notebooks depend on each other, so they can be opened in any order. Downloading the data on a later date will change the numbers slightly. To get next month's position for v3, run this after the close on the last trading day of the month and place the trade the next day:
 
 ```
 python v3_leveraged_beta/monthly_signal.py
