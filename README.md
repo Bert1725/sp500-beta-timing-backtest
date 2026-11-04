@@ -1,4 +1,4 @@
-# Timing Beta in a Taxable Account: A Monthly Backtest of Trend-Filtered and Leveraged S&P 500 Exposure
+# Does Timing Beta Beat Buy and Hold After Taxes?
 
 Robert Miller
 
